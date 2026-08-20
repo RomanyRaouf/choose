@@ -197,6 +197,15 @@
         document.getElementById("status").textContent = "❌ حصل خطأ أثناء تحميل المتقدمين";
       }
     }
+        // ✅ دالة إظهار/إخفاء خانة الرقم السري
+    function togglePassword() {
+      let area = document.getElementById("passwordArea");
+      if (area.style.display === "none" || area.style.display === "") {
+        area.style.display = "block";   // يظهر الخانة
+      } else {
+        area.style.display = "none";    // يخفيها
+      }
+    }
   </script>
 </body>
 </html>
