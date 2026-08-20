@@ -26,11 +26,19 @@
   <div id="studentInfo"></div>
   <div id="formArea"></div>
 
-  <hr>
-  <h3>عرض المتقدمين</h3>
+<hr>
+<h3>عرض المتقدمين</h3>
+<!-- زر لإظهار خانة الرقم السري -->
+<button onclick="togglePassword()">المتابعة</button>
+
+<!-- خانة الرقم السري مخفية في البداية -->
+<div id="passwordArea" style="display:none; margin-top:10px;">
   <input type="password" id="adminPass" placeholder="ادخل الرقم السري">
   <button onclick="showApplicants()">عرض</button>
-  <div id="applicants"></div>
+</div>
+
+<div id="applicants"></div>
+
 
   <script>
     const apiUrl = "https://script.google.com/macros/s/AKfycbxCfBPOtOUJPcrNVvLp58j6rG0NWpIBCZhHAV5oZdgk_AQYxxqVw2vOnuZmqlx2fF9l/exec";
