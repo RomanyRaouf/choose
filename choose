@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <title>برنامج تسجيل الطلاب</title>
+  <style>
+    body { font-family: Cairo; text-align: center; direction: rtl; }
+    label { display: block; margin-top: 10px; }
+    select, input { margin: 5px; padding: 5px; }
+    button { margin-top: 15px; padding: 10px; }
+    #studentInfo { margin-top: 20px; font-weight: bold; }
+    #status { margin-top: 10px; color: blue; font-weight: bold; }
+    table { border-collapse: collapse; margin: auto; margin-top: 10px; }
+    th, td { border: 1px solid #000; padding: 5px; }
+    h4 { margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <h2>اختر المسار والشعبة</h2>
+  <h2>إعداد روماني رؤوف</h2>
+  <label>الرقم القومي:</label>
+  <input type="text" id="nid">
+  <button onclick="checkStudent()">بحث</button>
+
+  <div id="status"></div>
+  <div id="studentInfo"></div>
+  <div id="formArea"></div>
+
+  <hr>
+  <h3>عرض المتقدمين</h3>
+  <input type="password" id="adminPass" placeholder="ادخل الرقم السري">
+  <button onclick="showApplicants()">عرض</button>
+  <div id="applicants"></div>
+
+  <script>
+    const apiUrl = "https://script.google.com/macros/s/AKfycbxCfBPOtOUJPcrNVvLp58j6rG0NWpIBCZhHAV5oZdgk_AQYxxqVw2vOnuZmqlx2fF9l/exec";
+
+    function normalizeNumber(num) {
+      return num.replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d));
+    }
+
+    async function checkStudent() {
+      document.getElementById("status").textContent = "⏳ جاري التحقق من الرقم القومي...";
+      let nid = normalizeNumber(document.getElementById("nid").value);
+      try {
+        let res = await fetch(apiUrl + "?nid=" + nid);
+        let data = await res.json();
+
+        if (data.error) {
+          document.getElementById("status").textContent = "";
+          alert(data.error);
+          return;
+        }
+
+        window.studentData = data;
+        document.getElementById("status").textContent = "✅ تم العثور على الطالب";
+        document.getElementById("studentInfo").innerHTML =
+          `<p>الكود: ${data.code}</p><p>الاسم: ${data.name}</p>`;
+
+        if (data.grade === "ثاني") {
+          showSecondForm();
+        } else if (data.grade === "ثالث") {
+          showThirdForm();
+        } else {
+          alert("❌ الصف غير محدد في الشيت");
+        }
+      } catch (err) {
+        document.getElementById("status").textContent = "❌ حصل خطأ أثناء البحث";
+      }
+    }
+
+    function showSecondForm() {
+      document.getElementById("formArea").innerHTML = `
+        <h3>فورم الصف الثاني</h3>
+        <label>اختر المسار:</label>
+        <select id="path" onchange="updateSubjects()">
+        <option value="اختر المسار">اخر المسار</option>
+          <option value="طب">الطب وعلوم الحياة</option>
+          <option value="هندسة">الهندسة وعلوم الحاسب</option>
+          <option value="آداب">الآداب والفنون</option>
+          <option value="إدارة">الإدارة والأعمال</option>
+        </select>
+        <label>اختر مادة التخصص:</label>
+        <select id="subject"></select>
+        <button onclick="submitForm('ثاني')">تسجيل</button>
+      `;
+    }
+
+    function updateSubjects() {
+      let path = document.getElementById("path").value;
+      let subjects = [];
+      if (path === "طب") subjects = ["فيزياء","رياضيات"];
+      if (path === "هندسة") subjects = ["كيمياء","برمجة"];
+      if (path === "آداب") subjects = ["علم النفس","اللغة الفرنسية"];
+      if (path === "إدارة") subjects = ["محاسبة","إدارة"];
+
+      let subjectSelect = document.getElementById("subject");
+      subjectSelect.innerHTML = subjects.map(s => `<option>${s}</option>`).join("");
+    }
+
+    function showThirdForm() {
+      document.getElementById("formArea").innerHTML = `
+        <h3>فورم الصف الثالث</h3>
+        <label>اختر الشعبة:</label>
+        <select id="track">
+          <option value="علمي علوم">علمي علوم</option>
+          <option value="علمي رياضيات">علمي رياضيات</option>
+          <option value="أدبي">أدبي</option>
+        </select>
+        <button onclick="submitForm('ثالث')">تسجيل</button>
+      `;
+    }
+
+    async function submitForm(grade) {
+      document.getElementById("status").textContent = "💾 جاري الحفظ...";
+      let data = {
+        code: window.studentData.code,
+        name: window.studentData.name,
+        nid: window.studentData.nid,
+        grade: grade,
+        path: grade === "ثاني" ? document.getElementById("path")?.value : null,
+        subject: grade === "ثاني" ? document.getElementById("subject")?.value : null,
+        track: grade === "ثالث" ? document.getElementById("track")?.value : null
+      };
+
+      try {
+        let res = await fetch(apiUrl, {
+          method: "POST",
+          body: JSON.stringify(data)
+        });
+
+   if (res.ok) {
+  let data = await res.json();
+  document.getElementById("status").textContent = "✅ " + data.success;
+} else {
+  document.getElementById("status").textContent = "❌ حصل خطأ من السيرفر";
+}
+
+      } catch (err) {
+        document.getElementById("status").textContent = " تم الحفظ بنجاح";
+      }
+    }
+
+    async function showApplicants() {
+      document.getElementById("status").textContent = "📊 جاري تحميل المتقدمين...";
+      let pass = document.getElementById("adminPass").value;
+      try {
+        let res = await fetch(apiUrl + "?password=" + pass);
+        let data = await res.json();
+
+        if (data.error) {
+          document.getElementById("status").textContent = "";
+          alert(data.error);
+          return;
+        }
+
+        document.getElementById("status").textContent = "✅ تم تحميل المتقدمين";
+
+        let output = "";
+
+        // جدول الصف الثاني (المسارات)
+        if (Object.keys(data.paths).length > 0) {
+          output += "<h4>📌 الصف الثاني (المسارات)</h4>";
+          output += "<table>";
+          output += "<tr><th>المسار</th><th>عدد الطلبة</th><th>الأسماء</th></tr>";
+          for (let path in data.paths) {
+            if (data.paths[path] && data.paths[path].length > 0) {
+              output += `<tr><td>${path}</td><td>${data.paths[path].length}</td><td>${data.paths[path].join(", ")}</td></tr>`;
+            }
+          }
+          output += "</table>";
+        }
+
+        // جدول الصف الثالث (الشعب)
+        if (Object.keys(data.tracks).length > 0) {
+          output += "<h4>📌 الصف الثالث (الشعب)</h4>";
+          output += "<table>";
+          output += "<tr><th>الشعبة</th><th>عدد الطلبة</th><th>الأسماء</th></tr>";
+          for (let track in data.tracks) {
+            if (data.tracks[track] && data.tracks[track].length > 0) {
+              output += `<tr><td>${track}</td><td>${data.tracks[track].length}</td><td>${data.tracks[track].join(", ")}</td></tr>`;
+            }
+          }
+          output += "</table>";
+        }
+
+        document.getElementById("applicants").innerHTML = output;
+      } catch (err) {
+        document.getElementById("status").textContent = "❌ حصل خطأ أثناء تحميل المتقدمين";
+      }
+    }
+  </script>
+</body>
+</html>
